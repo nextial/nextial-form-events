@@ -1,6 +1,6 @@
-=== Nextial Form Events ===
+=== Nextial Form Events – ChatGPT MCP for Contact Form 7, WPForms, Fluent Forms and Gravity Forms ===
 Contributors: nextial
-Tags: chatgpt, contact form 7, wpforms, lead notification, mcp
+Tags: contact form 7, wpforms, chatgpt, mcp, ai
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
