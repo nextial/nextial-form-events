@@ -84,8 +84,9 @@ class Nextial_FE_Forms {
 				$forms[] = self::form_row( 'cf7', $f->id(), $f->title() );
 			}
 		}
-		if ( function_exists( 'wpforms' ) && isset( wpforms()->form ) ) {
-			$list = wpforms()->form->get( '', array( 'posts_per_page' => 200 ) );
+		if ( function_exists( 'wpforms' ) ) {
+			$handler = method_exists( wpforms(), 'obj' ) ? wpforms()->obj( 'form' ) : ( isset( wpforms()->form ) ? wpforms()->form : null );
+			$list    = $handler ? $handler->get( '', array( 'posts_per_page' => 200 ) ) : array();
 			foreach ( (array) $list as $f ) {
 				if ( isset( $f->ID ) ) {
 					$forms[] = self::form_row( 'wpforms', $f->ID, $f->post_title );
@@ -271,6 +272,9 @@ class Nextial_FE_Forms {
 			if ( isset( $item['attributes']['name'] ) ) {
 				$n            = (string) $item['attributes']['name'];
 				$labels[ $n ] = isset( $item['settings']['label'] ) ? wp_strip_all_tags( (string) $item['settings']['label'] ) : '';
+				if ( '' === $labels[ $n ] && isset( $item['element'] ) && 'input_name' === $item['element'] ) {
+					$labels[ $n ] = 'Name';
+				}
 				$types[ $n ]  = isset( $item['element'] ) ? (string) $item['element'] : '';
 			}
 			if ( isset( $item['columns'] ) && is_array( $item['columns'] ) ) {
