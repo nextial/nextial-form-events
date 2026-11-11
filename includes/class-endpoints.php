@@ -113,7 +113,7 @@ class Nextial_FE_Endpoints {
 			);
 		}
 		$msg    = Nextial_FE_Input::json( $body );
-		$needed = is_array( $msg ) && isset( $msg['method'] ) && is_string( $msg['method'] ) ? Nextial_FE_OAuth::scope_for_method( $msg['method'] ) : null;
+		$needed = is_array( $msg ) && isset( $msg['method'] ) && is_string( $msg['method'] ) ? Nextial_FE_OAuth::scope_for_method( $msg['method'], $msg['params'] ?? null ) : null;
 		if ( $needed && ! in_array( $needed, $who['scopes'], true ) ) {
 			self::send(
 				403,

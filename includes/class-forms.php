@@ -1,6 +1,6 @@
 <?php
 /**
- * Form plugin adapters: Contact Form 7, WPForms, Fluent Forms, Gravity Forms.
+ * Form plugin adapters: Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms, Ninja Forms.
  *
  * Each adapter hooks the plugin's "valid submission" action, normalises the
  * entry to a common shape and hands it to Nextial_FE_Events::submitted().
@@ -20,7 +20,7 @@ class Nextial_FE_Forms {
 	const MAX_VALUE  = 2000;
 
 	/** Field types that are never sent, whatever the plugin calls them. */
-	const SENSITIVE_TYPES = array( 'password', 'file', 'fileupload', 'file-upload', 'input_file', 'creditcard', 'credit-card', 'stripe-credit-card', 'authorize_net', 'square', 'paypal-commerce', 'payment_method', 'captcha', 'recaptcha', 'hcaptcha', 'turnstile', 'quiz', 'html', 'section', 'page', 'divider', 'pagebreak', 'signature', 'consent_hidden' );
+	const SENSITIVE_TYPES = array( 'password', 'file', 'fileupload', 'file-upload', 'input_file', 'creditcard', 'credit-card', 'stripe-credit-card', 'authorize_net', 'square', 'paypal-commerce', 'payment_method', 'captcha', 'recaptcha', 'hcaptcha', 'turnstile', 'quiz', 'html', 'section', 'page', 'divider', 'pagebreak', 'signature', 'consent_hidden', 'file_upload', 'creditcardnumber', 'creditcardcvc', 'creditcardexpiration', 'creditcardfullname', 'creditcardzip', 'recaptcha_v3', 'spam', 'submit' );
 
 	public static function init() {
 		// Contact Form 7: fires only for valid, non-spam submissions.
@@ -33,6 +33,10 @@ class Nextial_FE_Forms {
 		add_action( 'fluentform_submission_inserted', array( __CLASS__, 'on_fluent_legacy' ), 20, 3 );
 		// Gravity Forms.
 		add_action( 'gform_after_submission', array( __CLASS__, 'on_gravity' ), 20, 2 );
+		// Formidable Forms (entries flagged as spam or saved as drafts are skipped).
+		add_action( 'frm_after_create_entry', array( __CLASS__, 'on_formidable' ), 30, 3 );
+		// Ninja Forms (honeypot hits never reach this hook).
+		add_action( 'ninja_forms_after_submission', array( __CLASS__, 'on_ninja' ), 20, 1 );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -45,6 +49,8 @@ class Nextial_FE_Forms {
 			'wpforms' => 'WPForms',
 			'fluent'  => 'Fluent Forms',
 			'gravity' => 'Gravity Forms',
+			'formidable' => 'Formidable Forms',
+			'ninja'   => 'Ninja Forms',
 		);
 		return isset( $labels[ $plugin ] ) ? $labels[ $plugin ] : (string) $plugin;
 	}
@@ -67,6 +73,12 @@ class Nextial_FE_Forms {
 		}
 		if ( class_exists( 'GFAPI' ) ) {
 			$out[] = 'gravity';
+		}
+		if ( class_exists( 'FrmForm' ) && class_exists( 'FrmEntry' ) ) {
+			$out[] = 'formidable';
+		}
+		if ( function_exists( 'Ninja_Forms' ) ) {
+			$out[] = 'ninja';
 		}
 		return $out;
 	}
@@ -105,6 +117,21 @@ class Nextial_FE_Forms {
 		if ( class_exists( 'GFAPI' ) ) {
 			foreach ( (array) GFAPI::get_forms() as $f ) {
 				$forms[] = self::form_row( 'gravity', $f['id'], $f['title'] );
+			}
+		}
+		if ( class_exists( 'FrmForm' ) && method_exists( 'FrmForm', 'get_published_forms' ) ) {
+			foreach ( (array) FrmForm::get_published_forms( array(), 200 ) as $f ) {
+				if ( is_object( $f ) && isset( $f->id ) ) {
+					$forms[] = self::form_row( 'formidable', $f->id, $f->name );
+				}
+			}
+		}
+		if ( function_exists( 'Ninja_Forms' ) && method_exists( Ninja_Forms(), 'form' ) ) {
+			$nf = Ninja_Forms()->form();
+			foreach ( is_object( $nf ) && method_exists( $nf, 'get_forms' ) ? (array) $nf->get_forms() : array() as $f ) {
+				if ( is_object( $f ) && method_exists( $f, 'get_id' ) ) {
+					$forms[] = self::form_row( 'ninja', $f->get_id(), method_exists( $f, 'get_setting' ) ? $f->get_setting( 'title' ) : 'Form ' . $f->get_id() );
+				}
 			}
 		}
 		return $forms;
@@ -172,6 +199,7 @@ class Nextial_FE_Forms {
 				}
 			}
 		}
+		$labels = self::cf7_labels( method_exists( $form, 'prop' ) ? (string) $form->prop( 'form' ) : '' );
 		$fields = array();
 		foreach ( (array) $submission->get_posted_data() as $name => $value ) {
 			$name = (string) $name;
@@ -180,13 +208,48 @@ class Nextial_FE_Forms {
 			}
 			$fields[] = array(
 				'name'  => $name,
-				'label' => $name,
+				'label' => isset( $labels[ $name ] ) ? $labels[ $name ] : self::humanize( $name ),
 				'type'  => isset( $types[ $name ] ) ? $types[ $name ] : '',
 				'value' => $value,
 			);
 		}
 		$url = method_exists( $submission, 'get_meta' ) ? (string) $submission->get_meta( 'url' ) : '';
 		self::submit( 'cf7', $form->id(), $form->title(), null, $fields, $url, admin_url( 'admin.php?page=wpcf7&post=' . (int) $form->id() . '&action=edit' ) );
+	}
+
+	/**
+	 * Labels from a Contact Form 7 template: the text inside <label> before
+	 * the form tag, e.g. "<label> Your name [text* your-name] </label>".
+	 *
+	 * @return array<string,string> field name => label
+	 */
+	public static function cf7_labels( $template ) {
+		$out = array();
+		if ( ! is_string( $template ) || '' === $template ) {
+			return $out;
+		}
+		if ( preg_match_all( '#<label\b[^>]*>(.*?)</label>#is', $template, $blocks ) ) {
+			foreach ( $blocks[1] as $block ) {
+				$text  = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( false === strpos( $block, '[' ) ? $block : substr( $block, 0, strpos( $block, '[' ) ) ) ) );
+				$text  = rtrim( $text, " :*\t" );
+				if ( '' === $text || ! preg_match_all( '/\[[a-z_]+\*?\s+([A-Za-z0-9_\-]+)/', $block, $tags ) ) {
+					continue;
+				}
+				foreach ( $tags[1] as $name ) {
+					if ( ! isset( $out[ $name ] ) ) {
+						$out[ $name ] = $text;
+					}
+				}
+			}
+		}
+		return $out;
+	}
+
+	/** "your-email" => "Email", "project_details" => "Project details". */
+	public static function humanize( $name ) {
+		$t = preg_replace( '/^your[-_]/', '', (string) $name );
+		$t = trim( str_replace( array( '-', '_' ), ' ', $t ) );
+		return '' === $t ? (string) $name : ucfirst( $t );
 	}
 
 	/**
@@ -310,6 +373,70 @@ class Nextial_FE_Forms {
 		$form_id = (int) ( $form['id'] ?? 0 );
 		$id      = isset( $entry['id'] ) ? (string) $entry['id'] : null;
 		self::submit( 'gravity', $form_id, $form['title'] ?? 'Form ' . $form_id, $id, $fields, (string) ( $entry['source_url'] ?? '' ), admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $form_id . '&lid=' . (int) $id ) );
+	}
+
+	/**
+	 * Formidable Forms (frm_after_create_entry).
+	 *
+	 * @param int   $entry_id Entry ID.
+	 * @param int   $form_id  Form ID.
+	 * @param array $args     is_child for repeater/embedded entries.
+	 */
+	public static function on_formidable( $entry_id, $form_id, $args = array() ) {
+		if ( ! class_exists( 'FrmEntry' ) || ! class_exists( 'FrmField' ) || ! empty( $args['is_child'] ) ) {
+			return;
+		}
+		$entry = FrmEntry::getOne( (int) $entry_id, true );
+		if ( ! is_object( $entry ) || 0 !== (int) ( $entry->is_draft ?? 0 ) ) {
+			return; // Drafts and spam (Formidable stores spam with a non-zero is_draft status).
+		}
+		$metas  = isset( $entry->metas ) && is_array( $entry->metas ) ? $entry->metas : array();
+		$fields = array();
+		foreach ( (array) FrmField::get_all_for_form( (int) $form_id ) as $field ) {
+			if ( ! is_object( $field ) || ! array_key_exists( $field->id, $metas ) ) {
+				continue;
+			}
+			$fields[] = array(
+				'name'  => (string) ( $field->field_key ?? 'field_' . $field->id ),
+				'label' => isset( $field->name ) && '' !== $field->name ? (string) $field->name : 'Field ' . $field->id,
+				'type'  => (string) ( $field->type ?? '' ),
+				'value' => $metas[ $field->id ],
+			);
+		}
+		$form  = class_exists( 'FrmForm' ) ? FrmForm::getOne( (int) $form_id ) : null;
+		$title = is_object( $form ) && isset( $form->name ) ? $form->name : 'Form ' . (int) $form_id;
+		$url   = isset( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+		self::submit( 'formidable', (int) $form_id, $title, (string) (int) $entry_id, $fields, $url, admin_url( 'admin.php?page=formidable-entries&frm_action=show&id=' . (int) $entry_id ) );
+	}
+
+	/**
+	 * Ninja Forms (ninja_forms_after_submission).
+	 *
+	 * @param array $form_data id, settings (title), fields (id, key, label, type, value), actions.
+	 */
+	public static function on_ninja( $form_data ) {
+		$form_id = is_array( $form_data ) && isset( $form_data['id'] ) ? (int) $form_data['id'] : 0;
+		if ( ! $form_id ) {
+			return;
+		}
+		$fields = array();
+		foreach ( (array) ( $form_data['fields'] ?? array() ) as $f ) {
+			if ( ! is_array( $f ) ) {
+				continue;
+			}
+			$key      = (string) ( $f['key'] ?? ( 'field_' . ( $f['id'] ?? '' ) ) );
+			$fields[] = array(
+				'name'  => $key,
+				'label' => isset( $f['label'] ) && '' !== $f['label'] ? (string) $f['label'] : $key,
+				'type'  => (string) ( $f['type'] ?? '' ),
+				'value' => $f['value'] ?? '',
+			);
+		}
+		$title = $form_data['settings']['title'] ?? 'Form ' . $form_id;
+		$sub   = $form_data['actions']['save']['sub_id'] ?? null; // Set when the "Record Submission" action ran.
+		$url   = isset( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+		$admin = $sub ? admin_url( 'post.php?post=' . (int) $sub . '&action=edit' ) : admin_url( 'admin.php?page=ninja-forms' );
+		self::submit( 'ninja', $form_id, $title, $sub ? (string) (int) $sub : null, $fields, $url, $admin );
 	}
 
 	/* ------------------------------------------------------------------ */

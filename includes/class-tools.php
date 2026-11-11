@@ -68,11 +68,42 @@ class Nextial_FE_Tools {
 	}
 
 	/**
+	 * OAuth scope a tool needs: its "_scope" key (set by add-ons for write
+	 * tools), otherwise the read scope.
+	 */
+	public static function scope_for( $name ) {
+		foreach ( self::definitions() as $tool ) {
+			if ( ( $tool['name'] ?? '' ) === $name && ! empty( $tool['_scope'] ) ) {
+				return (string) $tool['_scope'];
+			}
+		}
+		return Nextial_FE_OAuth::SCOPE_READ;
+	}
+
+	/** Definitions as sent to the client (internal keys removed). */
+	public static function public_definitions() {
+		$out = array();
+		foreach ( self::definitions() as $tool ) {
+			unset( $tool['_scope'] );
+			$out[] = $tool;
+		}
+		return $out;
+	}
+
+	/**
 	 * Run a tool. Returns structured data or WP_Error for tool-level errors.
 	 *
 	 * @return array|WP_Error
 	 */
 	public static function call( $name, array $args ) {
+		/**
+		 * Add-ons run their own tools here: return data or WP_Error, or null
+		 * to let Nextial Form Events handle the call.
+		 */
+		$pre = apply_filters( 'nextial_fe_tool_call', null, $name, $args );
+		if ( null !== $pre ) {
+			return $pre;
+		}
 		switch ( $name ) {
 			case 'list_forms':
 				$forms = array();

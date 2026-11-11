@@ -8,7 +8,7 @@ Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-ChatGPT gets every new Contact Form 7, WPForms, Fluent Forms or Gravity Forms entry and handles it by itself: sorts the lead, drafts the reply.
+ChatGPT handles every new Contact Form 7, WPForms, Fluent, Gravity, Formidable or Ninja Forms entry: sorts the lead and drafts the reply.
 
 == Description ==
 
@@ -26,6 +26,8 @@ ChatGPT subscribes to the event, your site notifies it the moment a form is subm
 * WPForms (Lite and Pro)
 * Fluent Forms
 * Gravity Forms
+* Formidable Forms
+* Ninja Forms
 
 You choose which forms notify ChatGPT and which fields are never sent.
 
@@ -73,7 +75,7 @@ No data is sent until an administrator connects an assistant and it subscribes t
 
 = Trademarks =
 
-ChatGPT is a trademark of OpenAI. Contact Form 7, WPForms, Fluent Forms and Gravity Forms belong to their respective owners. Nextial Form Events is an independent plugin by nextial and is not affiliated with, endorsed or sponsored by any of them.
+ChatGPT is a trademark of OpenAI. Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms and Ninja Forms belong to their respective owners. Nextial Form Events is an independent plugin by nextial and is not affiliated with, endorsed or sponsored by any of them.
 
 == Installation ==
 
@@ -116,10 +118,11 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 
 == Screenshots ==
 
-1. Settings → Nextial Form Events: forms sent to ChatGPT and the connection URL.
+1. Settings → Nextial Form Events: choose the forms sent to ChatGPT, fields that are never sent, and the connection URL.
 2. The consent screen shown when ChatGPT connects to the site.
+3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
 
 = 0.1.0 =
-* First release: form.submitted event for Contact Form 7, WPForms, Fluent Forms and Gravity Forms, per-form switch, excluded fields, read-only tools (list_forms, list_recent_submissions, get_submission), OAuth 2.1 or secret URL, signed webhooks with retries, self-test and delivery log.
+* First release: form.submitted event for Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms and Ninja Forms, per-form switch, excluded fields, read-only tools (list_forms, list_recent_submissions, get_submission), OAuth 2.1 or secret URL, signed webhooks with retries, self-test and delivery log.

@@ -57,7 +57,7 @@ class Nextial_FE_Admin {
 	/**
 	 * Product page URL (more events with the optional Pro add-on).
 	 */
-	const PRO_URL = 'https://nextial.it/form-events/';
+	const PRO_URL = 'https://checkout.freemius.com/plugin/43089/plan/75030/?billing_cycle=annual';
 
 	/**
 	 * Whether an add-on has registered extra events.
@@ -467,6 +467,7 @@ class Nextial_FE_Admin {
 	private static function render_forms() {
 		$forms = Nextial_FE_Forms::all_forms();
 		?>
+		<?php self::pro_box(); ?>
 		<h2><?php esc_html_e( 'Forms sent to ChatGPT', 'nextial-form-events' ); ?></h2>
 		<?php if ( empty( $forms ) ) : ?>
 			<p><em><?php esc_html_e( 'No forms found yet. Create a form in your form plugin and reload this page.', 'nextial-form-events' ); ?></em></p>
@@ -500,6 +501,61 @@ class Nextial_FE_Admin {
 		<?php
 	}
 
+	/** Readable JSON for the test receiver (display only; the delivered body is unchanged). */
+	private static function pretty_json( $body ) {
+		$data = json_decode( $body, true );
+		if ( null === $data ) {
+			return $body;
+		}
+		$out = wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		return $out ? $out : $body;
+	}
+
+	public static function pro_url() {
+		return (string) apply_filters( 'nextial_fe_pro_url', self::PRO_URL );
+	}
+
+	/**
+	 * What Lead Desk (Pro) would do on THIS site, with its own numbers. Shown
+	 * only on this page and only while the add-on is not active.
+	 */
+	private static function pro_box() {
+		if ( class_exists( 'Nextial_FEP_Leads' ) ) {
+			return;
+		}
+		$recent = Nextial_FE_Events::recent();
+		$emails = 0;
+		foreach ( $recent as $r ) {
+			foreach ( (array) ( $r['fields'] ?? array() ) as $f ) {
+				if ( is_email( trim( (string) ( $f['value'] ?? '' ) ) ) ) {
+					++$emails;
+					break;
+				}
+			}
+		}
+		?>
+		<div style="border:1px solid #c3c4c7;border-left:4px solid #dba617;background:#fff;padding:10px 14px;margin:12px 0;max-width:1000px">
+			<p style="margin:0 0 6px"><strong>Lead Desk (Pro)</strong> –
+			<?php
+			if ( $emails > 0 ) {
+				/* translators: %s: number of submissions */
+				echo esc_html( sprintf( __( '%s people who filled in your forms in the last 30 days left an e-mail address. With Lead Desk, ChatGPT answers them for you.', 'nextial-form-events' ), number_format_i18n( $emails ) ) );
+			} else {
+				esc_html_e( 'ChatGPT does not just read your leads: it answers them.', 'nextial-form-events' );
+			}
+			?>
+			</p>
+			<ul style="margin:0 0 8px 18px;list-style:disc">
+				<li><?php esc_html_e( 'Replies by e-mail from your site – only to the address in that form, never twice, or as drafts you approve.', 'nextial-form-events' ); ?></li>
+				<li><?php esc_html_e( 'Reminds ChatGPT of leads nobody answered after a few hours (lead.unanswered).', 'nextial-form-events' ); ?></li>
+				<li><?php esc_html_e( 'Tells where each lead came from: Google Ads, campaign, landing page, referrer.', 'nextial-form-events' ); ?></li>
+				<li><?php esc_html_e( 'A lead inbox in WordPress (new, replied, handled, spam) and block words for spam.', 'nextial-form-events' ); ?></li>
+			</ul>
+			<a class="button button-secondary" href="<?php echo esc_url( self::pro_url() ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'See Lead Desk', 'nextial-form-events' ); ?></a>
+		</div>
+		<?php
+	}
+
 	public static function render() {
 		if ( ! current_user_can( self::cap() ) ) {
 			return;
@@ -530,7 +586,7 @@ class Nextial_FE_Admin {
 					?>
 				</p>
 			<?php else : ?>
-				<p><?php esc_html_e( 'Lets ChatGPT react to every new form submission on this site (Contact Form 7, WPForms, Fluent Forms, Gravity Forms). ChatGPT subscribes through MCP Events and receives a signed notification each time.', 'nextial-form-events' ); ?></p>
+				<p><?php esc_html_e( 'Lets ChatGPT react to every new form submission on this site (Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms, Ninja Forms). ChatGPT subscribes through MCP Events and receives a signed notification each time.', 'nextial-form-events' ); ?></p>
 			<?php endif; ?>
 
 			<?php if ( $notice ) : ?>
@@ -538,7 +594,7 @@ class Nextial_FE_Admin {
 			<?php endif; ?>
 
 			<?php if ( ! Nextial_FE_Forms::active_sources() ) : ?>
-				<div class="notice notice-warning"><p><?php esc_html_e( 'No supported form plugin is active. Install Contact Form 7, WPForms, Fluent Forms or Gravity Forms.', 'nextial-form-events' ); ?></p></div>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'No supported form plugin is active. Install Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms or Ninja Forms.', 'nextial-form-events' ); ?></p></div>
 			<?php endif; ?>
 
 			<?php self::render_forms(); ?>
@@ -640,7 +696,7 @@ class Nextial_FE_Admin {
 							<td><?php echo esc_html( $r['type'] ); ?></td>
 							<td><code><?php echo esc_html( $r['name'] ); ?></code></td>
 							<td><?php echo $r['signature_ok'] ? '✅' : '❌'; ?></td>
-							<td><details><summary><?php esc_html_e( 'show', 'nextial-form-events' ); ?></summary><pre style="white-space:pre-wrap;max-width:700px"><?php echo esc_html( $r['body'] ); ?></pre></details></td>
+							<td><details><summary><?php esc_html_e( 'show', 'nextial-form-events' ); ?></summary><pre style="white-space:pre-wrap;max-width:700px"><?php echo esc_html( self::pretty_json( (string) $r['body'] ) ); ?></pre></details></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>

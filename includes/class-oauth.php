@@ -43,7 +43,21 @@ class Nextial_FE_OAuth {
 	/* ------------------------------------------------------------------ */
 
 	public static function scopes() {
-		return array( self::SCOPE_READ, self::SCOPE_EVENTS );
+		/**
+		 * Filter the OAuth scopes (add-ons add their own, e.g. a write scope).
+		 */
+		return array_values( array_unique( (array) apply_filters( 'nextial_fe_scopes', array( self::SCOPE_READ, self::SCOPE_EVENTS ) ) ) );
+	}
+
+	/** Consent-screen sentence per scope. */
+	public static function scope_labels() {
+		return (array) apply_filters(
+			'nextial_fe_scope_labels',
+			array(
+				self::SCOPE_READ   => __( 'Read the list of forms and recent form submissions (no changes)', 'nextial-form-events' ),
+				self::SCOPE_EVENTS => __( 'Be notified when someone submits a form on this site', 'nextial-form-events' ),
+			)
+		);
 	}
 
 	/** Issuer: has a path of its own so it cannot clash with other plugins. */
@@ -611,9 +625,10 @@ class Nextial_FE_OAuth {
 	}
 
 	/** Scope a JSON-RPC method needs (null = none beyond a valid token). */
-	public static function scope_for_method( $method ) {
+	public static function scope_for_method( $method, $params = null ) {
 		if ( 'tools/call' === $method ) {
-			return self::SCOPE_READ;
+			$name = is_array( $params ) && isset( $params['name'] ) && is_string( $params['name'] ) ? $params['name'] : '';
+			return Nextial_FE_Tools::scope_for( $name );
 		}
 		if ( 'events/subscribe' === $method || 'events/unsubscribe' === $method ) {
 			return self::SCOPE_EVENTS;
@@ -881,10 +896,7 @@ class Nextial_FE_OAuth {
 	}
 
 	private static function consent_page( array $check, $user ) {
-		$labels = array(
-			self::SCOPE_READ   => __( 'Read the list of forms and recent form submissions (no changes)', 'nextial-form-events' ),
-			self::SCOPE_EVENTS => __( 'Be notified when someone submits a form on this site', 'nextial-form-events' ),
-		);
+		$labels = self::scope_labels();
 		$dest     = (string) wp_parse_url( $check['params']['redirect_uri'], PHP_URL_HOST );
 		$official = 0 === strpos( $check['client']['client_id'], 'https://chatgpt.com/' ) && in_array( $dest, array( 'chatgpt.com', 'chat.openai.com' ), true );
 		ob_start();

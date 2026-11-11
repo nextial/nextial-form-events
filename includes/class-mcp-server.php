@@ -194,13 +194,13 @@ class Nextial_FE_MCP_Server {
 	 * how ChatGPT knows to offer the sign-in step.
 	 */
 	private function tool_list() {
-		$tools = Nextial_FE_Tools::definitions();
+		$tools = Nextial_FE_Tools::public_definitions();
 		if ( $this->oauth ) {
 			foreach ( $tools as $i => $tool ) {
 				$tools[ $i ]['securitySchemes'] = array(
 					array(
 						'type'   => 'oauth2',
-						'scopes' => array( Nextial_FE_OAuth::SCOPE_READ ),
+						'scopes' => array( Nextial_FE_Tools::scope_for( $tool['name'] ) ),
 					),
 				);
 			}
