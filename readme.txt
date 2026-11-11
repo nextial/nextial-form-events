@@ -1,6 +1,6 @@
 === Nextial Form Events ===
 Contributors: nextial
-Tags: contact form 7, wpforms, gravity forms, chatgpt, ai
+Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -12,6 +12,8 @@ ChatGPT handles every new Contact Form 7, WPForms, Fluent, Gravity, Formidable o
 
 == Description ==
 
+**Before you install, you need:** one of the supported form plugins, a ChatGPT plan with **Work** chats and custom MCP servers (ChatGPT **Plus** or higher), and a site on **HTTPS**. Without Work chats ChatGPT can read your form entries but cannot react to new ones.
+
 Nextial Form Events connects your WordPress forms to ChatGPT with **MCP Events**, the way ChatGPT reacts when something happens in a connected app. Each time a visitor submits a form, your site sends ChatGPT a signed notification and ChatGPT does what you asked it to, in plain language:
 
 * "When someone fills in my contact form, tell me if it is a real lead and draft a reply in my tone."
@@ -19,6 +21,8 @@ Nextial Form Events connects your WordPress forms to ChatGPT with **MCP Events**
 * "Ignore messages that look like sales pitches, and tell me about the rest."
 
 ChatGPT subscribes to the event, your site notifies it the moment a form is submitted, and ChatGPT does the rest. No Zapier, no polling, no code.
+
+https://youtu.be/Tr4-CdZGUyI
 
 = Supported form plugins =
 
