@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Nextial Form Events
  * Description:       MCP Events for WordPress forms. ChatGPT and other MCP clients get a signed notification for every new Contact Form 7, WPForms, Fluent Forms or Gravity Forms submission and react automatically.
- * Version:           0.1.0
+ * Version:           0.1.1
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Nextial
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'NEXTIAL_FE_VERSION', '0.1.0' );
+define( 'NEXTIAL_FE_VERSION', '0.1.1' );
 define( 'NEXTIAL_FE_FILE', __FILE__ );
 define( 'NEXTIAL_FE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NEXTIAL_FE_DB_VERSION', '1' );

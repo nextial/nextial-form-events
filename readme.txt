@@ -4,7 +4,7 @@ Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -127,6 +127,10 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
+
+= 0.1.1 =
+* Sign-in: native MCP clients that listen on a random local port (such as Claude Code) can now connect. Loopback redirect URIs are matched without the port (RFC 8252); everything else still needs an exact match.
+* The consent screen recognises Claude as well as ChatGPT.
 
 = 0.1.0 =
 * First release: form.submitted event for Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms and Ninja Forms, per-form switch, excluded fields, read-only tools (list_forms, list_recent_submissions, get_submission), OAuth 2.1 or secret URL, signed webhooks with retries, self-test and delivery log.
