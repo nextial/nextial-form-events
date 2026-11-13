@@ -4,7 +4,7 @@ Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,7 +41,7 @@ You choose which forms notify ChatGPT and which fields are never sent.
 
 = Read-only tools =
 
-ChatGPT can look things up when it needs more context: `list_forms`, `list_recent_submissions` (for example "has this person written before?") and `get_submission`. Only submissions already sent to ChatGPT are available (the last 50, up to 30 days). Nextial Form Events never changes your site or your form entries.
+ChatGPT can look things up when it needs more context: `list_forms`, `list_recent_submissions` (for example "has this person written before?") and `get_submission`. Only submissions sent to ChatGPT, or kept while an assistant you authorised is connected, are available (the last 50, up to 30 days). With `since`, an assistant without live events (for example a Claude scheduled task) can ask only for what arrived since its last check. Nextial Form Events never changes your site or your form entries.
 
 = Privacy and security =
 
@@ -49,6 +49,7 @@ ChatGPT can look things up when it needs more context: `list_forms`, `list_recen
 * Password, file-upload, credit-card, payment, CAPTCHA and the form plugins' technical fields are never sent.
 * Entries your form plugin marks as spam are never sent.
 * **Sign in with OAuth**: ChatGPT opens your site, you log in and press *Allow*. Disconnect at any time from Settings → Nextial Form Events; tokens and subscriptions are removed at once.
+* The last 50 submissions (at most 30 days) are kept only while ChatGPT is subscribed or an assistant you authorised is connected, so it can look them up.
 * Only administrators can connect the site.
 * Every notification is signed (Standard Webhooks, HMAC-SHA256). Callbacks are verified with a challenge before any data is sent.
 * Outgoing requests go only to public HTTPS addresses (no private networks, no redirects).
@@ -127,6 +128,10 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
+
+= 0.1.2 =
+* Works with assistants that have no live events (Claude, Claude Code, VS Code): while one you authorised is connected, recent submissions are kept so it can list them.
+* "What's new since last time": list_recent_submissions accepts since and returns checked_at and has_more, for example for a Claude scheduled task that checks every hour.
 
 = 0.1.1 =
 * Sign-in: native MCP clients that listen on a random local port (such as Claude Code) can now connect. Loopback redirect URIs are matched without the port (RFC 8252); everything else still needs an exact match.

@@ -731,6 +731,13 @@ class Nextial_FE_OAuth {
 	/* Connections (for the admin screen)                                  */
 	/* ------------------------------------------------------------------ */
 
+	/** True if at least one AI client the site owner authorised is still connected. */
+	public static function has_connections() {
+		global $wpdb;
+		$t = Nextial_FE_Store::tokens_table();
+		return (bool) $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM {$t} WHERE expires_at > %d LIMIT 1", time() ) );
+	}
+
 	/** Live grants: one row per (client, user) that still has a refresh token. */
 	public static function connections() {
 		global $wpdb;

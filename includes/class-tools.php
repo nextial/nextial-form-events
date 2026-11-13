@@ -3,9 +3,9 @@
  * Read-only MCP tools, so ChatGPT can look around after an event
  * ("a form arrived" -> was there an earlier one from the same person?).
  *
- * Only submissions already sent to ChatGPT as events are available here
- * (the last 50, at most 30 days old). Nothing is read from the form plugins'
- * own entry tables.
+ * Only submissions already sent to ChatGPT as events, or kept while an
+ * authorised AI client is connected, are available here (the last 50, at most
+ * 30 days old). Nothing is read from the form plugins' own entry tables.
  *
  * @package NextialFormEvents
  */
@@ -30,10 +30,14 @@ class Nextial_FE_Tools {
 			array(
 				'name'        => 'list_recent_submissions',
 				'title'       => 'List recent submissions',
-				'description' => 'List recent form submissions already sent to ChatGPT (last 50, up to 30 days), newest first. Optionally filter by form or by a text that appears in any field, such as an e-mail address.',
+				'description' => 'List recent form submissions (last 50, up to 30 days, kept while an AI client is connected), newest first. Optionally filter by form or by a text that appears in any field, such as an e-mail address. For "what is new since last time" (e.g. a scheduled task that runs every hour): pass since, then store checked_at from the result and pass it as since next time.',
 				'inputSchema' => array(
 					'type'                 => 'object',
 					'properties'           => array(
+						'since'   => array(
+							'type'        => 'string',
+							'description' => 'Only submissions made at or after this moment. ISO 8601 date-time (e.g. 2026-11-13T09:00:00Z) or Unix timestamp.',
+						),
 						'form_id' => array( 'type' => 'string' ),
 						'search'  => array(
 							'type'        => 'string',
@@ -121,11 +125,23 @@ class Nextial_FE_Tools {
 				);
 
 			case 'list_recent_submissions':
-				$limit  = isset( $args['limit'] ) ? max( 1, min( 50, (int) $args['limit'] ) ) : 10;
-				$form   = isset( $args['form_id'] ) ? (string) $args['form_id'] : '';
-				$search = isset( $args['search'] ) ? strtolower( trim( (string) $args['search'] ) ) : '';
-				$out    = array();
+				$checked_at = time();
+				$limit      = isset( $args['limit'] ) ? max( 1, min( 50, (int) $args['limit'] ) ) : 10;
+				$form       = isset( $args['form_id'] ) ? (string) $args['form_id'] : '';
+				$search     = isset( $args['search'] ) ? strtolower( trim( (string) $args['search'] ) ) : '';
+				$since      = null;
+				if ( isset( $args['since'] ) && '' !== $args['since'] ) {
+					$since = self::parse_moment( $args['since'] );
+					if ( null === $since ) {
+						return new WP_Error( 'nextial_fe_bad_date', 'since must be an ISO 8601 date-time (e.g. 2026-11-13T09:00:00Z) or a Unix timestamp.' );
+					}
+				}
+				$out      = array();
+				$has_more = false;
 				foreach ( array_reverse( Nextial_FE_Events::recent() ) as $s ) {
+					if ( null !== $since && strtotime( $s['submitted_at'] ) < $since ) {
+						continue;
+					}
 					if ( '' !== $form && (string) $s['form_id'] !== $form ) {
 						continue;
 					}
@@ -135,12 +151,17 @@ class Nextial_FE_Tools {
 							continue;
 						}
 					}
-					$out[] = $s;
 					if ( count( $out ) >= $limit ) {
+						$has_more = true;
 						break;
 					}
+					$out[] = $s;
 				}
-				return array( 'submissions' => $out );
+				return array(
+					'submissions' => $out,
+					'has_more'    => $has_more,
+					'checked_at'  => gmdate( 'Y-m-d\\TH:i:s\\Z', $checked_at ),
+				);
 
 			case 'get_submission':
 				$id = isset( $args['submission_id'] ) ? (string) $args['submission_id'] : '';
@@ -152,5 +173,31 @@ class Nextial_FE_Tools {
 				return new WP_Error( 'nextial_fe_not_found', 'Submission not found (only the last 50, up to 30 days old, are kept).' );
 		}
 		return new WP_Error( 'nextial_fe_unknown_tool', 'Unknown tool: ' . $name );
+	}
+
+	/**
+	 * Parse an ISO 8601 date-time or a Unix timestamp into a Unix timestamp.
+	 * A date-time without a time zone is read in UTC. Returns null if invalid.
+	 *
+	 * @param mixed $value Input.
+	 * @return int|null
+	 */
+	public static function parse_moment( $value ) {
+		if ( is_int( $value ) || ( is_string( $value ) && preg_match( '/^\\d{9,11}$/', $value ) ) ) {
+			return (int) $value;
+		}
+		if ( ! is_string( $value ) || ! preg_match( '/^\\d{4}-\\d{2}-\\d{2}([T ]\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?)?(Z|[+-]\\d{2}:?\\d{2})?$/i', trim( $value ) ) ) {
+			return null;
+		}
+		$ymd = array_map( 'intval', explode( '-', substr( trim( $value ), 0, 10 ) ) );
+		if ( ! checkdate( $ymd[1], $ymd[2], $ymd[0] ) ) {
+			return null;
+		}
+		try {
+			$dt = new DateTimeImmutable( trim( $value ), new DateTimeZone( 'UTC' ) );
+		} catch ( Exception $e ) {
+			return null;
+		}
+		return $dt->getTimestamp();
 	}
 }

@@ -174,7 +174,13 @@ class Nextial_FE_Events {
 		 * Build submissions even without form.submitted subscribers (add-ons
 		 * that track leads return true).
 		 */
-		if ( ! apply_filters( 'nextial_fe_process_without_subscribers', false ) && empty( Nextial_FE_Store::active_subscriptions( 'form.submitted' ) ) ) {
+		/*
+		 * AI clients without live events (Claude, Claude Code, VS Code...) can
+		 * only ask list_recent_submissions: keep the recent list for them too,
+		 * but only while a client the site owner authorised is connected.
+		 */
+		$connected = Nextial_FE_OAuth::has_connections();
+		if ( ! $connected && ! apply_filters( 'nextial_fe_process_without_subscribers', false ) && empty( Nextial_FE_Store::active_subscriptions( 'form.submitted' ) ) ) {
 			return;
 		}
 		foreach ( $queue as $sub ) {
@@ -198,7 +204,7 @@ class Nextial_FE_Events {
 				continue;
 			}
 			$sent = Nextial_FE_Dispatcher::emit( 'form.submitted', $data );
-			if ( $sent > 0 ) {
+			if ( $sent > 0 || $connected ) {
 				self::remember( $data );
 			}
 			/**
@@ -209,7 +215,7 @@ class Nextial_FE_Events {
 	}
 
 	/* ------------------------------------------------------------------ */
-	/* Recent submissions (only those already sent to ChatGPT)             */
+	/* Recent submissions (sent to ChatGPT or kept for a connected client) */
 	/* ------------------------------------------------------------------ */
 
 	private static function remember( array $data ) {
