@@ -4,7 +4,7 @@ Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,6 +38,10 @@ You choose which forms notify ChatGPT and which fields are never sent.
 = Event =
 
 * **form.submitted** – a visitor submitted a form. ChatGPT can listen to all forms, one form (`form_id`) or one plugin (`plugin`). Free, no limits.
+
+= Use it with Claude =
+
+Claude (claude.ai, Desktop, mobile): Settings → Connectors → "Add custom connector", paste the URL from Settings → Nextial Form Events, sign in and press *Allow*. No client ID or secret needed. Claude can list your forms and recent submissions and read each entry. Claude does not receive live events yet: for alerts, use a Claude scheduled task such as "every hour, list the submissions since the last checked_at and draft a reply to each new lead". Claude Code can connect too (`claude mcp add --transport http`).
 
 = Read-only tools =
 
@@ -74,13 +78,13 @@ Nextial Form Events does not contact any service on its own. It only talks to th
 
 * **Event notifications.** When ChatGPT – or another MCP client you connected – subscribes to an event, it gives Nextial Form Events a webhook URL (for ChatGPT, on `connectors.api.openai.com`). Each time a form is submitted, Nextial Form Events sends that URL a signed JSON message with: the form plugin, form ID and title, the entry ID (if the form plugin stores entries), the submitted field names, labels and values (except the ones excluded above), the page URL, the date and a link to the entry or form in your admin. Before the first message the URL is verified with a signed challenge.
 * **Read-only tools.** When the assistant calls a tool, the response contains your list of forms or submissions that were already sent as events.
-* **Client identification.** When an assistant connects with OAuth and identifies itself with a Client ID Metadata Document (ChatGPT uses `https://chatgpt.com/oauth/client.json`), Nextial Form Events downloads that public JSON file to check the app's name and allowed redirect addresses. Nothing about your site is sent in that request.
+* **Client identification.** When an assistant connects with OAuth and identifies itself with a Client ID Metadata Document (ChatGPT uses `https://chatgpt.com/oauth/client.json`, Claude uses `https://claude.ai/oauth/mcp-oauth-client-metadata`), Nextial Form Events downloads that public JSON file to check the app's name and allowed redirect addresses. Nothing about your site is sent in that request.
 
-No data is sent until an administrator connects an assistant and it subscribes to events or calls a tool. Form submissions contain personal data written by your visitors: mention in your privacy policy that form entries may be processed by the AI assistant you use. When you connect ChatGPT, OpenAI's terms and privacy policy apply to the data it receives: [Terms of use](https://openai.com/policies/terms-of-use/), [Privacy policy](https://openai.com/policies/privacy-policy/).
+No data is sent until an administrator connects an assistant and it subscribes to events or calls a tool. Form submissions contain personal data written by your visitors: mention in your privacy policy that form entries may be processed by the AI assistant you use. When you connect ChatGPT, OpenAI's terms and privacy policy apply to the data it receives: [Terms of use](https://openai.com/policies/terms-of-use/), [Privacy policy](https://openai.com/policies/privacy-policy/). When you connect Claude, Anthropic's terms and privacy policy apply: [Consumer terms](https://www.anthropic.com/legal/consumer-terms), [Privacy policy](https://www.anthropic.com/legal/privacy).
 
 = Trademarks =
 
-ChatGPT is a trademark of OpenAI. Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms and Ninja Forms belong to their respective owners. Nextial Form Events is an independent plugin by nextial and is not affiliated with, endorsed or sponsored by any of them.
+ChatGPT is a trademark of OpenAI. Claude is a trademark of Anthropic. Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms and Ninja Forms belong to their respective owners. Nextial Form Events is an independent plugin by nextial and is not affiliated with, endorsed or sponsored by any of them.
 
 == Installation ==
 
@@ -128,6 +132,9 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
+
+= 0.1.3 =
+* Settings page and readme: how to connect Claude, next to ChatGPT. The full Claude sign-in (Claude's published client identity, consent, tokens, refresh) and the tools were tested end to end in a lab: no code change was needed.
 
 = 0.1.2 =
 * Works with assistants that have no live events (Claude, Claude Code, VS Code): while one you authorised is connected, recent submissions are kept so it can list them.

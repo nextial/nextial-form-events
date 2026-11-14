@@ -611,6 +611,12 @@ class Nextial_FE_Admin {
 					<button type="button" class="button button-primary" data-nextial-fe-copy="nextial-fe-url" data-nextial-fe-copied="<?php esc_attr_e( 'Copied', 'nextial-form-events' ); ?>"><?php esc_html_e( 'Copy URL', 'nextial-form-events' ); ?></button>
 					<?php self::post_button( 'nextial_fe_oauth_check', __( 'Check OAuth setup', 'nextial-form-events' ), array(), 'button button-secondary' ); ?>
 				</p>
+				<h3><?php esc_html_e( 'Or connect Claude', 'nextial-form-events' ); ?></h3>
+				<ol>
+					<li><?php esc_html_e( 'In Claude open Settings → Connectors → "Add custom connector" and paste the same URL. No client ID or secret is needed.', 'nextial-form-events' ); ?></li>
+					<li><?php esc_html_e( 'Claude opens this site: sign in and press "Allow". Then ask for example "List the latest form submissions and tell me which ones are real leads".', 'nextial-form-events' ); ?></li>
+					<li><?php esc_html_e( 'Claude does not receive live events yet. For alerts, create a scheduled task in Claude, e.g. "Every hour, list the submissions since the last checked_at and draft a reply to each new lead".', 'nextial-form-events' ); ?></li>
+				</ol>
 				<?php $conns = Nextial_FE_OAuth::connections(); ?>
 				<?php if ( $conns ) : ?>
 					<h3><?php esc_html_e( 'Connected apps', 'nextial-form-events' ); ?></h3>
