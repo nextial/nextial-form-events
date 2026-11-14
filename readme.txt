@@ -4,7 +4,7 @@ Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.3
+Stable tag: 0.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,7 +123,7 @@ Your server must let WordPress answer `/.well-known/oauth-protected-resource/...
 
 = Other assistants? =
 
-Nextial Form Events implements the open Model Context Protocol (2026-07-28, with compatibility for 2025 revisions) and MCP Events webhook delivery, so any compatible client can connect.
+Nextial Form Events implements the open Model Context Protocol (2026-07-28, with compatibility for 2025 revisions) and MCP Events webhook delivery, so any compatible client can connect. VS Code (GitHub Copilot agent mode) and Cursor connect with the same URL and OAuth sign-in: add it as an HTTP MCP server and sign in when asked (both tested in a lab with their real sign-in settings). VS Code is recognised on the consent screen; Cursor registers itself, so the screen shows its self-declared name with a warning: continue only if you started the connection.
 
 == Screenshots ==
 
@@ -132,6 +132,9 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
+
+= 0.1.4 =
+* Sign-in: VS Code (its published identity at vscode.dev) is now recognised on the consent screen, like ChatGPT and Claude. VS Code and Cursor tested end to end in a lab (sign-in, tokens, refresh, tools); no other change was needed.
 
 = 0.1.3 =
 * Settings page and readme: how to connect Claude, next to ChatGPT. The full Claude sign-in (Claude's published client identity, consent, tokens, refresh) and the tools were tested end to end in a lab: no code change was needed.
