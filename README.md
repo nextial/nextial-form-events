@@ -26,6 +26,10 @@ One of the supported form plugins, a ChatGPT plan with **Work** chats and custom
 
 [Nextial Form Events Pro – Lead Desk](https://nextial.it/form-events/) adds the actions: reply to a lead from your site, mark handled or spam, add notes, a `lead.unanswered` event after X hours, and the lead source (UTM, gclid, landing page, referrer).
 
+## MCP Registry
+
+Listed in the official [MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nextial/form-events) as `io.github.nextial/form-events`. The server runs on your own WordPress site, so the registry entry is a URL template: `https://{site}/wp-json/nextial-form-events/v1/mcp` (install the free plugin first; sign-in is OAuth, no keys). Metadata: [`server.json`](server.json).
+
 ## Other Nextial plugins
 
 - [Nextial Order Events for WooCommerce](https://github.com/nextial/nextial-order-events-for-woocommerce) — new orders, stock and refunds to ChatGPT in real time ([WordPress.org](https://wordpress.org/plugins/nextial-order-events-for-woocommerce/))
