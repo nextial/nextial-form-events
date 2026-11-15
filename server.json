@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.nextial/form-events",
+  "title": "Nextial Form Events",
+  "description": "Contact form leads (CF7, WPForms, Gravity, Fluent, Ninja) in ChatGPT and Claude. WordPress plugin.",
+  "version": "0.1.5",
+  "websiteUrl": "https://wordpress.org/plugins/nextial-form-events/",
+  "repository": {
+    "url": "https://github.com/nextial/nextial-form-events",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://ps.w.org/nextial-form-events/assets/icon-256x256.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "256x256"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://{site}/wp-json/nextial-form-events/v1/mcp",
+      "variables": {
+        "site": {
+          "description": "Your site's domain, with the WordPress folder if any (install the free plugin first). Sign-in is OAuth, no keys.",
+          "placeholder": "www.example.com",
+          "isRequired": true
+        }
+      }
+    }
+  ]
+}
