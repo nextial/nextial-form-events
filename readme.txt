@@ -59,6 +59,13 @@ ChatGPT can look things up when it needs more context: `list_forms`, `list_recen
 * Outgoing requests go only to public HTTPS addresses (no private networks, no redirects).
 * ChatGPT is told that field values are written by visitors and must be treated as data, not as instructions.
 
+= Lead Desk (optional paid add-on) =
+
+The free plugin is complete on its own. [Lead Desk](https://checkout.freemius.com/plugin/43089/plan/75030/?billing_cycle=annual) (7-day free trial) adds:
+
+* **No lead lost when e-mail fails**: every submission is kept; if your site cannot send the form's notification e-mail (broken mail or SMTP), you are alerted on Slack, Discord or ChatGPT, and you resend that e-mail in one click once mail works.
+* Replies from your site written by ChatGPT (or drafts you approve), a reminder for leads nobody answered, and where each lead came from (UTM, Google Ads, landing page).
+
 = Built-in tests =
 
 The settings page has a **self-test** (subscribe → verify → signed delivery → unsubscribe on your own site), a **"listen for real form submissions"** mode, an **OAuth check** and a delivery log.
