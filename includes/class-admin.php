@@ -31,6 +31,58 @@ class Nextial_FE_Admin {
 		add_filter( 'plugin_action_links_' . plugin_basename( NEXTIAL_FE_FILE ), array( __CLASS__, 'action_links' ) );
 		add_filter( 'plugin_row_meta', array( __CLASS__, 'row_meta' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'dashboard_late_notice' ) );
+	}
+
+	/** Warning text when deliveries are stuck in the queue, or ''. */
+	public static function late_message() {
+		/** Minutes past the due time before a waiting delivery counts as late (default 30). */
+		$grace = (int) apply_filters( 'nextial_fe_late_after', 30 * MINUTE_IN_SECONDS );
+		$late  = Nextial_FE_Store::late_deliveries( max( 60, $grace ) );
+		if ( $late['count'] < 1 ) {
+			return '';
+		}
+		$msg = sprintf(
+			/* translators: 1: number of notifications, 2: time ago (e.g. "3 hours") */
+			_n( 'Nextial Form Events: %1$d form notification has been waiting to be sent for %2$s.', 'Nextial Form Events: %1$d form notifications have been waiting to be sent for %2$s.', $late['count'], 'nextial-form-events' ),
+			$late['count'],
+			human_time_diff( $late['since'], time() )
+		);
+		return $msg . ' ' . __( 'They are sent in the background, which runs only when WP-Cron runs: check that WP-Cron is not turned off (DISABLE_WP_CRON) without a real server cron. They are kept and will be sent as soon as background tasks run again.', 'nextial-form-events' );
+	}
+
+	/** Past-due list in Tools → Scheduled Actions, when Action Scheduler is present. */
+	public static function scheduled_actions_url() {
+		if ( ! function_exists( 'as_schedule_single_action' ) ) {
+			return '';
+		}
+		$args = array( 'status' => 'past-due', 's' => Nextial_FE_Dispatcher::HOOK );
+		if ( class_exists( 'WooCommerce' ) ) {
+			return add_query_arg( array_merge( array( 'page' => 'wc-status', 'tab' => 'action-scheduler' ), $args ), admin_url( 'admin.php' ) );
+		}
+		return add_query_arg( array_merge( array( 'page' => 'action-scheduler' ), $args ), admin_url( 'tools.php' ) );
+	}
+
+	public static function late_notice( $inline = false ) {
+		$msg = self::late_message();
+		if ( '' === $msg ) {
+			return;
+		}
+		$url = self::scheduled_actions_url();
+		echo '<div class="notice notice-warning' . ( $inline ? ' inline' : '' ) . '" id="nxfe-late"><p>' . esc_html( $msg );
+		if ( $url ) {
+			echo ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'See past-due actions', 'nextial-form-events' ) . '</a>';
+		}
+		echo '</p></div>';
+	}
+
+	/** Same warning on the Dashboard, only for who can fix it. */
+	public static function dashboard_late_notice() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'dashboard' !== $screen->id || ! current_user_can( self::cap() ) ) {
+			return;
+		}
+		self::late_notice();
 	}
 
 	/** Load the admin script only on the plugin page. */
@@ -592,6 +644,8 @@ class Nextial_FE_Admin {
 			<?php if ( $notice ) : ?>
 				<div class="notice notice-<?php echo esc_attr( $notice['type'] ); ?> is-dismissible"><p><?php echo esc_html( $notice['text'] ); ?></p></div>
 			<?php endif; ?>
+
+			<?php self::late_notice( true ); ?>
 
 			<?php if ( ! Nextial_FE_Forms::active_sources() ) : ?>
 				<div class="notice notice-warning"><p><?php esc_html_e( 'No supported form plugin is active. Install Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms or Ninja Forms.', 'nextial-form-events' ); ?></p></div>

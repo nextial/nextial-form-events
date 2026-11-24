@@ -4,7 +4,7 @@ Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -122,7 +122,7 @@ Nextial Form Events only notifies ChatGPT and lets it read submissions; it canno
 
 = Notifications arrive late =
 
-Deliveries are sent in the background with WP-Cron (or Action Scheduler, if another plugin provides it), usually within a minute. On sites with little traffic, consider a real server cron for wp-cron.php.
+Deliveries are sent in the background with WP-Cron (or Action Scheduler, if another plugin provides it), usually within a minute. On sites with little traffic, consider a real server cron for wp-cron.php. If notifications wait for more than 30 minutes (for example because WP-Cron is turned off with DISABLE_WP_CRON and no server cron replaces it), a warning appears on the Dashboard and on the plugin page, with a link to the past-due actions when Action Scheduler is present. Nothing is lost: waiting notifications are sent as soon as background tasks run again. The 30 minutes can be changed with the `nextial_fe_late_after` filter (seconds).
 
 = ChatGPT or Claude worked, then asks to reconnect (invalid_grant) =
 
@@ -147,6 +147,9 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
+
+= 0.1.6 =
+* Warning when form notifications are stuck: if background tasks stop (WP-Cron turned off without a server cron, or a site with no visits), notifications waited silently in the queue and nobody knew. Now the Dashboard and the plugin page say how many are waiting and since when, what to check, and link to the past-due actions in Tools → Scheduled Actions when Action Scheduler is present. Waiting notifications are kept and sent once background tasks run again. Retries are counted from their own due time, so a normal retry does not trigger the warning.
 
 = 0.1.5 =
 * Sign-in: the connection no longer drops when ChatGPT or another assistant sends back an older refresh token (it keeps a previous copy, or runs several sessions on one connection, as ChatGPT Desktop does). Before, the store answered "invalid_grant" and the assistant had to be connected again. A refresh token that was already replaced is still accepted for 7 days and gets its own new tokens; the other sessions keep working. "Disconnect" still removes every token at once. Tested in a lab with Claude, VS Code and Cursor sign-in settings.

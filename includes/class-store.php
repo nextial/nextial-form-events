@@ -371,6 +371,34 @@ class Nextial_FE_Store {
 		$wpdb->update( self::deliveries_table(), $fields, array( 'id' => $id ) );
 	}
 
+	/**
+	 * Deliveries that should have been attempted but were not (background
+	 * tasks not running: WP-Cron off or no traffic).
+	 *
+	 * @param int $grace Seconds past the due time before a delivery counts as late.
+	 * @return array{count:int,since:int} Late deliveries and the oldest due time (0 if none).
+	 */
+	public static function late_deliveries( $grace ) {
+		global $wpdb;
+		$table = self::deliveries_table();
+		$rows  = $wpdb->get_results( "SELECT status, attempts, updated_at FROM {$table} WHERE status IN ('pending','retrying') ORDER BY id ASC LIMIT 500", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$now   = time();
+		$out   = array( 'count' => 0, 'since' => 0 );
+		foreach ( (array) $rows as $r ) {
+			$wait = 0;
+			if ( 'retrying' === $r['status'] ) {
+				$i    = max( 0, (int) $r['attempts'] - 1 );
+				$wait = Nextial_FE_Dispatcher::BACKOFF[ min( $i, count( Nextial_FE_Dispatcher::BACKOFF ) - 1 ) ];
+			}
+			$due = (int) $r['updated_at'] + $wait;
+			if ( $due + $grace < $now ) {
+				++$out['count'];
+				$out['since'] = $out['since'] ? min( $out['since'], $due ) : $due;
+			}
+		}
+		return $out;
+	}
+
 	public static function recent_deliveries( $limit = 20 ) {
 		global $wpdb;
 		$table = self::deliveries_table();
