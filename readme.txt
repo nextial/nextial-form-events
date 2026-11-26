@@ -124,6 +124,10 @@ Nextial Form Events only notifies ChatGPT and lets it read submissions; it canno
 
 Deliveries are sent in the background with WP-Cron (or Action Scheduler, if another plugin provides it), usually within a minute. On sites with little traffic, consider a real server cron for wp-cron.php. If notifications wait for more than 30 minutes (for example because WP-Cron is turned off with DISABLE_WP_CRON and no server cron replaces it), a warning appears on the Dashboard and on the plugin page, with a link to the past-due actions when Action Scheduler is present. Nothing is lost: waiting notifications are sent as soon as background tasks run again. The 30 minutes can be changed with the `nextial_fe_late_after` filter (seconds).
 
+= My host does not have PHP 8.3, so I stay on Contact Form 7 6.1. Does it work? =
+
+Yes. Contact Form 7 6.2 needs PHP 8.3; version 6.1 still runs on PHP 7.4 and later, and so does Nextial Form Events. We tested Contact Form 7 6.1.7 on PHP 7.4 and PHP 8.2 (WordPress 7.1.5): real submissions reach ChatGPT and Claude with their fields (no hidden or captcha fields), the OAuth sign-in works, and the optional Lead Desk add-on saves every lead, keeps submissions blocked by Cloudflare Turnstile and warns you when a form goes quiet. Contact Form 7 6.2 is tested on PHP 8.3. To check your PHP version: Tools → Site Health → Info → Server. To keep Contact Form 7 on 6.1, turn off auto-updates for that plugin only (Plugins → "Disable auto-updates").
+
 = ChatGPT or Claude worked, then asks to reconnect (invalid_grant) =
 
 Update to the latest version. Some assistants send back an older refresh token (a previous copy, or a second session on the same connection); since 0.1.5 this is accepted for 7 days and the connection stays up. If it still happens, open the settings page: "Recent sign-in problems" shows the exact reason, and the OAuth check tells you whether your server blocks the sign-in addresses.
