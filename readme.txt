@@ -64,6 +64,8 @@ ChatGPT can look things up when it needs more context: `list_forms`, `list_recen
 The free plugin is complete on its own. [Lead Desk](https://checkout.freemius.com/plugin/43089/plan/75030/?billing_cycle=annual) (7-day free trial) adds:
 
 * **No lead lost when e-mail fails**: every submission is kept; if your site cannot send the form's notification e-mail (broken mail or SMTP), you are alerted on Slack, Discord or ChatGPT, and you resend that e-mail in one click once mail works.
+* **No lead lost to the captcha**: when Cloudflare Turnstile, reCAPTCHA or hCaptcha wrongly blocks a real visitor, Contact Form 7 keeps no copy. Lead Desk keeps these submissions for 30 days so you can mark them "Not spam" in one click.
+* **Know when a form goes quiet**: if a form that usually gets submissions receives none for much longer than usual (for example after an update breaks it in the browser), you get an alert and a notice in WordPress.
 * Replies from your site written by ChatGPT (or drafts you approve), a reminder for leads nobody answered, and where each lead came from (UTM, Google Ads, landing page).
 
 = Built-in tests =
@@ -127,6 +129,10 @@ Deliveries are sent in the background with WP-Cron (or Action Scheduler, if anot
 = My host does not have PHP 8.3, so I stay on Contact Form 7 6.1. Does it work? =
 
 Yes. Contact Form 7 6.2 needs PHP 8.3; version 6.1 still runs on PHP 7.4 and later, and so does Nextial Form Events. We tested Contact Form 7 6.1.7 on PHP 7.4 and PHP 8.2 (WordPress 7.1.5): real submissions reach ChatGPT and Claude with their fields (no hidden or captcha fields), the OAuth sign-in works, and the optional Lead Desk add-on saves every lead, keeps submissions blocked by Cloudflare Turnstile and warns you when a form goes quiet. Contact Form 7 6.2 is tested on PHP 8.3. To check your PHP version: Tools → Site Health → Info → Server. To keep Contact Form 7 on 6.1, turn off auto-updates for that plugin only (Plugins → "Disable auto-updates").
+
+= Can an update break my form without anyone noticing? =
+
+Yes. In a real case on the Contact Form 7 support forum, a child theme still used a class that Contact Form 7 had removed: after the update the Send button kept spinning and the server returned an error, while the page looked normal. When a submission never reaches WordPress, no plugin on the server can see it. The optional Lead Desk add-on learns each form's usual rhythm (from the last 28 days) and warns you when a busy form stays silent for much longer than usual: automatically 4 times the usual gap and at least 2 days, or a number of days you choose. After any update, send one test message from each form.
 
 = ChatGPT or Claude worked, then asks to reconnect (invalid_grant) =
 
