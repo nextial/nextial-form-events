@@ -51,6 +51,54 @@ class Nextial_FE_Admin {
 		return $msg . ' ' . __( 'They are sent in the background, which runs only when WP-Cron runs: check that WP-Cron is not turned off (DISABLE_WP_CRON) without a real server cron. They are kept and will be sent as soon as background tasks run again.', 'nextial-form-events' );
 	}
 
+	/**
+	 * PHP of the last background run, when its major.minor differs from this request's PHP.
+	 *
+	 * @return array{bg:string,web:string,since:int,older:bool}|null
+	 */
+	public static function php_mismatch() {
+		$bg = get_option( Nextial_FE_Dispatcher::BG_PHP_OPTION );
+		if ( ! is_array( $bg ) || empty( $bg['v'] ) || ! preg_match( '/^(\d+\.\d+)/', (string) $bg['v'], $b ) || ! preg_match( '/^(\d+\.\d+)/', PHP_VERSION, $w ) ) {
+			return null;
+		}
+		if ( $b[1] === $w[1] ) {
+			return null;
+		}
+		return array(
+			'bg'    => (string) $bg['v'],
+			'web'   => PHP_VERSION,
+			'since' => (int) ( $bg['t'] ?? 0 ),
+			'older' => version_compare( $b[1], $w[1], '<' ),
+		);
+	}
+
+	/** Warning text when background tasks run on another PHP version, or ''. */
+	public static function php_message() {
+		$m = self::php_mismatch();
+		if ( ! $m ) {
+			return '';
+		}
+		$msg = sprintf(
+			/* translators: 1: PHP version of background tasks, 2: time ago (e.g. "3 hours"), 3: PHP version of this page */
+			__( 'Nextial Form Events: background tasks on this site last ran with PHP %1$s (%2$s ago), but your site runs PHP %3$s.', 'nextial-form-events' ),
+			$m['bg'],
+			human_time_diff( $m['since'], time() ),
+			$m['web']
+		);
+		if ( $m['older'] ) {
+			$msg .= ' ' . __( 'A plugin that needs a newer PHP can stop background tasks with a fatal error (Contact Form 7 6.2 needs PHP 8.3): form notifications and scheduled emails are then not sent, and you may get "Your Site is Experiencing a Technical Issue" emails.', 'nextial-form-events' );
+		}
+		return $msg . ' ' . __( 'Ask your host to use the same PHP version for the server cron job (often the account\'s default PHP or PHP CLI) as for the site.', 'nextial-form-events' );
+	}
+
+	public static function php_notice( $inline = false ) {
+		$msg = self::php_message();
+		if ( '' === $msg ) {
+			return;
+		}
+		echo '<div class="notice notice-warning' . ( $inline ? ' inline' : '' ) . '" id="nxfe-php"><p>' . esc_html( $msg ) . '</p></div>';
+	}
+
 	/** Past-due list in Tools → Scheduled Actions, when Action Scheduler is present. */
 	public static function scheduled_actions_url() {
 		if ( ! function_exists( 'as_schedule_single_action' ) ) {
@@ -83,6 +131,10 @@ class Nextial_FE_Admin {
 			return;
 		}
 		self::late_notice();
+		$m = self::php_mismatch();
+		if ( $m && $m['older'] ) {
+			self::php_notice();
+		}
 	}
 
 	/** Load the admin script only on the plugin page. */
@@ -646,6 +698,7 @@ class Nextial_FE_Admin {
 			<?php endif; ?>
 
 			<?php self::late_notice( true ); ?>
+			<?php self::php_notice( true ); ?>
 
 			<?php if ( ! Nextial_FE_Forms::active_sources() ) : ?>
 				<div class="notice notice-warning"><p><?php esc_html_e( 'No supported form plugin is active. Install Contact Form 7, WPForms, Fluent Forms, Gravity Forms, Formidable Forms or Ninja Forms.', 'nextial-form-events' ); ?></p></div>

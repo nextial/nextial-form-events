@@ -19,12 +19,40 @@ class Nextial_FE_Dispatcher {
 	/** Seconds to wait before attempt n+1 (index = attempts already made). */
 	const BACKOFF = array( 30, 120, 600, 1800, 7200 );
 
+	/** Option with the PHP version that last ran our background tasks. */
+	const BG_PHP_OPTION = 'nextial_fe_bg_php';
+
 	public static function init() {
+		// Both hooks only fire from background runners (WP-Cron, a server cron, Action Scheduler):
+		// the admin test button calls deliver() directly, not through the hook.
+		add_action( self::HOOK, array( __CLASS__, 'note_background_php' ), 1, 0 );
+		add_action( self::CLEANUP_HOOK, array( __CLASS__, 'note_background_php' ), 1, 0 );
 		add_action( self::HOOK, array( __CLASS__, 'deliver' ), 10, 1 );
 		add_action( self::CLEANUP_HOOK, array( 'Nextial_FE_Store', 'purge_expired' ) );
 		if ( ! wp_next_scheduled( self::CLEANUP_HOOK ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CLEANUP_HOOK );
 		}
+	}
+
+	/**
+	 * Remember which PHP runs background tasks. A server cron often uses the
+	 * account's default PHP or PHP CLI, which can be older than the site's PHP;
+	 * a plugin that needs a newer PHP then stops those tasks with a fatal error.
+	 */
+	public static function note_background_php() {
+		$prev = get_option( self::BG_PHP_OPTION );
+		if ( is_array( $prev ) && ( $prev['v'] ?? '' ) === PHP_VERSION && ( $prev['sapi'] ?? '' ) === PHP_SAPI && (int) ( $prev['t'] ?? 0 ) > time() - HOUR_IN_SECONDS ) {
+			return;
+		}
+		update_option(
+			self::BG_PHP_OPTION,
+			array(
+				'v'    => PHP_VERSION,
+				'sapi' => PHP_SAPI,
+				't'    => time(),
+			),
+			false
+		);
 	}
 
 	/**

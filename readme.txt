@@ -4,7 +4,7 @@ Tags: contact form 7, wpforms, chatgpt, mcp, lead management
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.6
+Stable tag: 0.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Deliveries are sent in the background with WP-Cron (or Action Scheduler, if anot
 
 Yes. Contact Form 7 6.2 needs PHP 8.3; version 6.1 still runs on PHP 7.4 and later, and so does Nextial Form Events. We tested Contact Form 7 6.1.7 on PHP 7.4 and PHP 8.2 (WordPress 7.1.5): real submissions reach ChatGPT and Claude with their fields (no hidden or captcha fields), the OAuth sign-in works, and the optional Lead Desk add-on saves every lead, keeps submissions blocked by Cloudflare Turnstile and warns you when a form goes quiet. Contact Form 7 6.2 is tested on PHP 8.3. To check your PHP version: Tools → Site Health → Info → Server. To keep Contact Form 7 on 6.1, turn off auto-updates for that plugin only (Plugins → "Disable auto-updates").
 
+= Contact Form 7 says it needs PHP 8.3, but my site already runs PHP 8.3 or newer =
+
+The error usually comes from background tasks, not from your pages. Many hosts run the server cron job (wp-cron.php or WP-CLI) with the account's default PHP or PHP CLI, which can be older than the PHP chosen for the site, so Contact Form 7 6.2 stops there with a fatal error and you get "Your Site is Experiencing a Technical Issue" emails. Nextial Form Events notes which PHP runs its background tasks and warns you on the Dashboard and on its settings page when it is older than your site's PHP. Fix: in your hosting panel set the same PHP version for the cron job (or the account default / PHP CLI) as for the site; on a shell, `php -v` shows the CLI version. Form notifications that waited are kept and sent once background tasks run again.
+
 = Can an update break my form without anyone noticing? =
 
 Yes. In a real case on the Contact Form 7 support forum, a child theme still used a class that Contact Form 7 had removed: after the update the Send button kept spinning and the server returned an error, while the page looked normal. When a submission never reaches WordPress, no plugin on the server can see it. The optional Lead Desk add-on learns each form's usual rhythm (from the last 28 days) and warns you when a busy form stays silent for much longer than usual: automatically 4 times the usual gap and at least 2 days, or a number of days you choose. After any update, send one test message from each form.
@@ -157,6 +161,9 @@ Nextial Form Events implements the open Model Context Protocol (2026-07-28, with
 3. Built-in self-test and test receiver: a real Contact Form 7 quote request delivered as a signed form.submitted event, with field labels.
 
 == Changelog ==
+
+= 0.1.7 =
+* Warning when background tasks run on an older PHP than the site. Many hosts run the server cron job with the account's default PHP or PHP CLI; a plugin that needs a newer PHP (Contact Form 7 6.2 needs PHP 8.3) then stops background tasks with a fatal error, even if the site runs PHP 8.3 or newer, and form notifications wait in the queue. The plugin now notes which PHP runs its background tasks and says so on the Dashboard and on its settings page, with what to ask your host. New FAQ for the case.
 
 = 0.1.6 =
 * Warning when form notifications are stuck: if background tasks stop (WP-Cron turned off without a server cron, or a site with no visits), notifications waited silently in the queue and nobody knew. Now the Dashboard and the plugin page say how many are waiting and since when, what to check, and link to the past-due actions in Tools → Scheduled Actions when Action Scheduler is present. Waiting notifications are kept and sent once background tasks run again. Retries are counted from their own due time, so a normal retry does not trigger the warning.
